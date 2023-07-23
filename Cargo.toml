@@ -1,0 +1,12 @@
+[package]
+name = "pleiades"
+version = "0.0.0"
+edition = "2021"
+authors = ["Jonathan Paul Wolfe: rootismyotheremail@gmail.com"]
+description = "machine learning"
+license = "LGPL-3.0"
+repository = "https://github.com/jonathanpwolfe/pleiades.git"
+readme = "README.md"
+
+[dependencies]
+plotters = "0.3.5"
