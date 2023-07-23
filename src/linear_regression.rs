@@ -188,7 +188,6 @@ impl LinearRegression {
         self.data.iter().map(|p| p.clone().x).sum::<f64>() / self.data.len() as f64
     }
     pub(crate) fn calc_confidence_level_and_intervals(&mut self) {
-
         if let (Some(coefficient), Some(residuals)) = (
             self.coefficient,
             &self.residuals
@@ -220,11 +219,27 @@ impl LinearRegression {
 
             // The confidence level should be calculated as the area under the t-distribution
             // curve outside the interval defined by the t-statistic (two-tailed test)
-                   } else {
+        } else {
             self.confidence_level = None;
             self.confidence_intervals = None;
         }
     }
+
+        pub(crate) fn predict(self: &Self, x_values: &[f64]) -> Vec<DataPoint> {
+            if let (Some(coefficient), Some(intercept)) = (self.coefficient, self.intercept) {
+               let y_values: Vec<f64>=x_values
+                    .iter()
+                    .map(|&x| coefficient * x + intercept)
+                    .collect();
+              let mut  predictions : Vec<DataPoint> = vec![];
+                for i in 0..x_values.len(){
+                    predictions.push(DataPoint{x:x_values[i],y:y_values[i]});
+                }
+                predictions
+            } else {
+                vec![]
+            }
+        }
 
 
 }
