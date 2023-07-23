@@ -11,22 +11,23 @@ use statrs::distribution::StudentsT;
 use statrs::distribution::ContinuousCDF;
 
 #[derive(Debug)]
-pub(crate) struct LinearRegression{
+pub(crate) struct LinearRegression {
     data: Box<Vec<DataPoint>>,
     coefficient: Option<f64>,
     intercept: Option<f64>,
-    goodness_of_fit:Option<f64>,
-    residuals:Option<Vec<f64>>,
-    p_value_slope:Option<f64>,
-    p_value_intercept:Option<f64>,
-    confidence_intervals:Option<f64>,
-    predictions:Option<f64>,
-    multicollinearity:Option<f64>,
-    outliers:Option<f64>,
-    homoscedasticity:Option<f64>,
+    goodness_of_fit: Option<f64>,
+    residuals: Option<Vec<f64>>,
+    p_value_slope: Option<f64>,
+    p_value_intercept: Option<f64>,
+    confidence_intervals: Option<f64>,
+    predictions: Option<f64>,
+    multicollinearity: Option<f64>,
+    outliers: Option<f64>,
+    homoscedasticity: Option<f64>,
 }
+
 impl LinearRegression {
-    pub(crate) fn new(data : &Vec<DataPoint>) ->Self {
+    pub(crate) fn new(data: &Vec<DataPoint>) -> Self {
         LinearRegression {
             data: Box::new(data.to_vec()),
             coefficient: None,
@@ -43,32 +44,40 @@ impl LinearRegression {
         }
     }
 
-    pub(crate) fn calculate(&mut self){
-        self.calc_slope_intercept().unwrap();
+    pub(crate) fn calculate(&mut self) -> Result<(), Box<dyn Error>> {
+        self.calc_slope_intercept()?;
         self.calc_goodness_of_fit();
         self.calc_residuals();
         self.p_values_and_significance();
 
+        Ok(())
     }
-    pub(crate) fn get_slope_intercept(&self) -> (f64,f64){
-        (self.coefficient.expect("Not Calculated"),self.intercept.expect("Not Calculated"))
+
+    pub(crate) fn get_slope_intercept(&self) -> (f64, f64) {
+        (self.coefficient.expect("Not Calculated"), self.intercept.expect("Not Calculated"))
     }
 
     // Function to calculate the linear regression coefficients
-        fn calc_slope_intercept(&mut self)->Result<(), Box<dyn Error>> {
+    fn calc_slope_intercept(&mut self) -> Result<(), Box<dyn Error>> {
         let n = self.data.len() as f64;
         let x_sum: f64 = self.data.iter().map(|p| p.x).sum();
         let y_sum: f64 = self.data.iter().map(|p| p.y).sum();
         let xy_sum: f64 = self.data.iter().map(|p| p.x * p.y).sum();
-        let x_squared_sum: f64 =self.data.iter().map(|p| p.x * p.x).sum();
+        let x_squared_sum: f64 = self.data.iter().map(|p| p.x * p.x).sum();
 
-        self.coefficient = Some((n * xy_sum - x_sum * y_sum) / (n * x_squared_sum - x_sum * x_sum));
+        let denominator = n * x_squared_sum - x_sum * x_sum;
+
+        if denominator == 0.0 {
+            return Err("Denominator is zero".into());
+        }
+
+        self.coefficient = Some((n * xy_sum - x_sum * y_sum) / denominator);
         self.intercept = Some((y_sum - self.coefficient.unwrap() * x_sum) / n);
+
         Ok(())
     }
 
-// Function to plot the data and the linear regression line
-
+    // Function to plot the data and the linear regression line
     pub(crate) fn plot(
         &self,
         plot_title: &str,
@@ -78,8 +87,7 @@ impl LinearRegression {
     ) -> Result<(), Box<dyn Error>> {
         // Create a plotter area
         let output_file = &format!("./images/plots/{}", output_file);
-        let root = BitMapBackend::new(output_file,
-                                      (1600, 1200)).into_drawing_area();
+        let root = BitMapBackend::new(output_file, (1600, 1200)).into_drawing_area();
         root.fill(&WHITE)?;
 
         // Define the plot area
@@ -96,32 +104,33 @@ impl LinearRegression {
             5,
             &BLUE,
             &|c, s, st| {
-                return EmptyElement::at(c) + Circle::new((0, 0), s, st.filled());
+                EmptyElement::at(c) + Circle::new((0, 0), s, st.filled())
             },
         ))?;
 
         // Draw the linear regression line
         chart.draw_series(LineSeries::new(
-            vec![(0.0, self.intercept.expect("Not Calculated")),
-                 (5.0, self.coefficient.expect("Not Calculated") * 5.0 + self.intercept
-                     .expect("Not Calculated"))],
+            vec![
+                (0.0, self.intercept.expect("Not Calculated")),
+                (5.0, self.coefficient.expect("Not Calculated") * 5.0
+                    + self.intercept.expect("Not Calculated")),
+            ],
             &RED,
         ))?;
 
         Ok(())
     }
+
     // Function to calculate the goodness of fit (R-squared)
     fn calc_goodness_of_fit(&mut self) {
-        let y_mean: f64 = self.data.iter().map(|p| p.clone().y)
-            .sum::<f64>() / self.data.len() as f64;
+        let y_mean: f64 = self.data.iter().map(|p| p.y).sum::<f64>() / self.data.len() as f64;
         let mut ss_res = 0.0;
         let mut ss_tot = 0.0;
 
         for point in self.data.iter() {
-            let y_pred = self.coefficient
-                .expect("Not Calculated") * point.clone().x
+            let y_pred = self.coefficient.expect("Not Calculated") * point.x
                 + self.intercept.expect("Not Calculated");
-            let y_actual = point.clone().y;
+            let y_actual = point.y;
 
             ss_res += (y_actual - y_pred).powi(2);
             ss_tot += (y_actual - y_mean).powi(2);
@@ -134,17 +143,19 @@ impl LinearRegression {
     pub(crate) fn r_squared(&self) -> f64 {
         self.goodness_of_fit.expect("Not Calculated")
     }
+
     pub(crate) fn calc_residuals(&mut self) {
-        let mut residuals = Vec::new();
+        if let (Some(coefficient), Some(intercept)) = (self.coefficient, self.intercept) {
+            let residuals: Vec<f64> = self
+                .data
+                .iter()
+                .map(|point| point.y - (coefficient * point.x + intercept))
+                .collect();
 
-        for point in self.data.iter() {
-            let y_pred = self.coefficient.expect("not calculated") * point.clone().x + self.intercept.expect("not calculated");
-            let y_actual = point.clone().y;
-
-            residuals.push(y_actual - y_pred);
-            self.residuals = Some(residuals.clone());
+            self.residuals = Some(residuals);
         }
     }
+
     pub(crate) fn p_values_and_significance(&mut self) {
         let n = self.data.len() as f64;
         let k = 2.0; // Number of coefficients (including intercept and slope)
