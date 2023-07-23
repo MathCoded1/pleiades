@@ -25,9 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{:?}",lr);
 
     // Plot the data with the linear regression line
-    lr.plot_data_with_regression(
-        slope,
-        intercept,
+    lr.plot(
         "Scatter Plot with Linear Regression",
         "X Axis",
         "Y Axis",

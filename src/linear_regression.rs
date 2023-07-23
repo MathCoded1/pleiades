@@ -65,10 +65,8 @@ impl LinearRegression {
 
 // Function to plot the data and the linear regression line
 
-    pub(crate) fn plot_data_with_regression(
+    pub(crate) fn plot(
         &self,
-        slope: f64,
-        intercept: f64,
         plot_title: &str,
         x_label: &str,
         y_label: &str,
@@ -99,7 +97,7 @@ impl LinearRegression {
 
         // Draw the linear regression line
         chart.draw_series(LineSeries::new(
-            vec![(0.0, intercept), (5.0, slope * 5.0 + intercept)],
+            vec![(0.0, self.intercept.expect("Not Calculated")), (5.0, self.coefficient.expect("Not Calculated") * 5.0 + self.intercept.expect("Not Calculated"))],
             &RED,
         ))?;
 
