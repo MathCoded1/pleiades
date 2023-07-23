@@ -1,8 +1,7 @@
 mod linear_regression;
-
+mod datapoint;
 use linear_regression::LinearRegression;
-use linear_regression::DataPoint;
-
+use datapoint::DataPoint;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Example dataset: (x, y) pairs for the scatter plot

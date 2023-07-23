@@ -5,19 +5,11 @@ use plotters::style::full_palette::{RED, BLUE, WHITE};
 use plotters::drawing::IntoDrawingArea;
 use plotters::element::{Circle, EmptyElement};
 use plotters::series::{LineSeries, PointSeries};
+use crate::datapoint;
+use datapoint::DataPoint;
 
 
-// Define a simple DataPoint struct
-#[derive(Clone, Debug)]
-pub(crate) struct DataPoint {
-     x: f64,
-     y: f64,
-}
-impl DataPoint{
-    pub(crate) fn new(x:f64, y:f64) ->Self{
-        DataPoint{x,y}
-    }
-}
+
 #[derive(Debug)]
 pub(crate) struct LinearRegression{
     data: Box<Vec<DataPoint>>,
@@ -61,10 +53,10 @@ impl LinearRegression {
     // Function to calculate the linear regression coefficients
         fn calc_slope_intercept(&mut self)->Result<(), Box<dyn Error>> {
         let n = self.data.len() as f64;
-        let x_sum: f64 = self.data.iter().map(|p| p.x).sum();
-        let y_sum: f64 = self.data.iter().map(|p| p.y).sum();
-        let xy_sum: f64 = self.data.iter().map(|p| p.x * p.y).sum();
-        let x_squared_sum: f64 =self.data.iter().map(|p| p.x * p.x).sum();
+        let x_sum: f64 = self.data.iter().map(|p| p.get_x()).sum();
+        let y_sum: f64 = self.data.iter().map(|p| p.get_y()).sum();
+        let xy_sum: f64 = self.data.iter().map(|p| p.get_x() * p.get_y()).sum();
+        let x_squared_sum: f64 =self.data.iter().map(|p| p.get_x() * p.get_x()).sum();
 
         self.coefficient = (n * xy_sum - x_sum * y_sum) / (n * x_squared_sum - x_sum * x_sum);
         self.intercept = (y_sum - self.coefficient * x_sum) / n;
@@ -97,7 +89,7 @@ impl LinearRegression {
         // Draw the scatter plot
         chart.configure_mesh().draw()?;
         chart.draw_series(PointSeries::of_element(
-            self.data.iter().map(|p| (p.x, p.y)),
+            self.data.iter().map(|p| (p.get_x(), p.get_y())),
             5,
             &BLUE,
             &|c, s, st| {
@@ -115,13 +107,13 @@ impl LinearRegression {
     }
     // Function to calculate the goodness of fit (R-squared)
     fn calc_goodness_of_fit(&mut self) {
-        let y_mean: f64 = self.data.iter().map(|p| p.clone().y).sum::<f64>() / self.data.len() as f64;
+        let y_mean: f64 = self.data.iter().map(|p| p.clone().get_y()).sum::<f64>() / self.data.len() as f64;
         let mut ss_res = 0.0;
         let mut ss_tot = 0.0;
 
         for point in self.data.iter() {
-            let y_pred = self.coefficient * point.clone().x + self.intercept;
-            let y_actual = point.clone().y;
+            let y_pred = self.coefficient * point.clone().get_x() + self.intercept;
+            let y_actual = point.clone().get_y();
 
             ss_res += (y_actual - y_pred).powi(2);
             ss_tot += (y_actual - y_mean).powi(2);
