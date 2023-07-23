@@ -13,31 +13,31 @@ use datapoint::DataPoint;
 #[derive(Debug)]
 pub(crate) struct LinearRegression{
     data: Box<Vec<DataPoint>>,
-    coefficient: f64,
-    intercept: f64,
-    goodness_of_fit:f64,
-    residuals:f64,
-    p_values_and_significance:f64,
-    confidence_intervals:f64,
-    predictions:f64,
-    multicollinearity:f64,
-    outliers:f64,
-    homoscedasticity:f64,
+    coefficient: Option<f64>,
+    intercept: Option<f64>,
+    goodness_of_fit:Option<f64>,
+    residuals:Option<f64>,
+    p_values_and_significance:Option<f64>,
+    confidence_intervals:Option<f64>,
+    predictions:Option<f64>,
+    multicollinearity:Option<f64>,
+    outliers:Option<f64>,
+    homoscedasticity:Option<f64>,
 }
 impl LinearRegression {
     pub(crate) fn load(data : &Vec<DataPoint>) ->Self {
         LinearRegression {
             data: Box::new(data.to_vec()),
-            coefficient: 0.0,
-            intercept: 0.0,
-            goodness_of_fit: 0.0,
-            residuals: 0.0,
-            p_values_and_significance: 0.0,
-            confidence_intervals: 0.0,
-            predictions: 0.0,
-            multicollinearity: 0.0,
-            outliers: 0.0,
-            homoscedasticity: 0.0,
+            coefficient: None,
+            intercept: None,
+            goodness_of_fit: None,
+            residuals: None,
+            p_values_and_significance: None,
+            confidence_intervals: None,
+            predictions: None,
+            multicollinearity: None,
+            outliers: None,
+            homoscedasticity: None,
         }
     }
 
@@ -47,7 +47,7 @@ impl LinearRegression {
 
     }
     pub(crate) fn get_slope_intercept(&self) -> (f64,f64){
-        (self.coefficient,self.intercept)
+        (self.coefficient.expect("Not Calculated"),self.intercept.expect("Not Calculated"))
     }
 
     // Function to calculate the linear regression coefficients
@@ -58,8 +58,8 @@ impl LinearRegression {
         let xy_sum: f64 = self.data.iter().map(|p| p.x * p.y).sum();
         let x_squared_sum: f64 =self.data.iter().map(|p| p.x * p.x).sum();
 
-        self.coefficient = (n * xy_sum - x_sum * y_sum) / (n * x_squared_sum - x_sum * x_sum);
-        self.intercept = (y_sum - self.coefficient * x_sum) / n;
+        self.coefficient = Some((n * xy_sum - x_sum * y_sum) / (n * x_squared_sum - x_sum * x_sum));
+        self.intercept = Some((y_sum - self.coefficient.unwrap() * x_sum) / n);
         Ok(())
     }
 
@@ -112,19 +112,19 @@ impl LinearRegression {
         let mut ss_tot = 0.0;
 
         for point in self.data.iter() {
-            let y_pred = self.coefficient * point.clone().x + self.intercept;
+            let y_pred = self.coefficient.expect("Not Calculated") * point.clone().x + self.intercept.expect("Not Calculated");
             let y_actual = point.clone().y;
 
             ss_res += (y_actual - y_pred).powi(2);
             ss_tot += (y_actual - y_mean).powi(2);
         }
 
-        self.goodness_of_fit = 1.0 - ss_res / ss_tot;
+        self.goodness_of_fit = Some(1.0 - ss_res / ss_tot);
     }
 
     // Function to get the R-squared value
     pub(crate) fn r_squared(&self) -> f64 {
-        self.goodness_of_fit
+        self.goodness_of_fit.expect("Not Calculated")
     }
 }
 
