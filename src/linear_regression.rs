@@ -25,7 +25,7 @@ pub(crate) struct LinearRegression{
     homoscedasticity:Option<f64>,
 }
 impl LinearRegression {
-    pub(crate) fn load(data : &Vec<DataPoint>) ->Self {
+    pub(crate) fn new(data : &Vec<DataPoint>) ->Self {
         LinearRegression {
             data: Box::new(data.to_vec()),
             coefficient: None,

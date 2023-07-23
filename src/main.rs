@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         DataPoint::new(3.2, 4.8 ),
         DataPoint::new(4.8, 5.3 ),
     ];
-    let mut lr = LinearRegression::load(&data);
+    let mut lr = LinearRegression::new(&data);
     lr.calculate();
     // Calculate the linear regression coefficients
     let (slope, intercept) = lr.get_slope_intercept();
