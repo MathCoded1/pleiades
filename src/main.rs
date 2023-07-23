@@ -18,13 +18,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
     let mut lr = LinearRegression::new(&data);
     lr.calculate();
-    // Calculate the linear regression coefficients
-    let (slope, intercept) = lr.get_slope_intercept();
-
-    // Print the results
     println!("{:?}",lr);
-
-    // Plot the data with the linear regression line
     lr.plot(
         "Scatter Plot with Linear Regression",
         "X Axis",

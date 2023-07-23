@@ -7,8 +7,8 @@ use plotters::element::{Circle, EmptyElement};
 use plotters::series::{LineSeries, PointSeries};
 use crate::datapoint;
 use datapoint::DataPoint;
-
-
+use statrs::distribution::StudentsT;
+use statrs::distribution::ContinuousCDF;
 
 #[derive(Debug)]
 pub(crate) struct LinearRegression{
@@ -17,7 +17,8 @@ pub(crate) struct LinearRegression{
     intercept: Option<f64>,
     goodness_of_fit:Option<f64>,
     residuals:Option<Vec<f64>>,
-    p_values_and_significance:Option<f64>,
+    p_value_slope:Option<f64>,
+    p_value_intercept:Option<f64>,
     confidence_intervals:Option<f64>,
     predictions:Option<f64>,
     multicollinearity:Option<f64>,
@@ -32,7 +33,8 @@ impl LinearRegression {
             intercept: None,
             goodness_of_fit: None,
             residuals: None,
-            p_values_and_significance: None,
+            p_value_slope: None,
+            p_value_intercept: None,
             confidence_intervals: None,
             predictions: None,
             multicollinearity: None,
@@ -45,6 +47,7 @@ impl LinearRegression {
         self.calc_slope_intercept().unwrap();
         self.calc_goodness_of_fit();
         self.calc_residuals();
+        self.p_values_and_significance();
 
     }
     pub(crate) fn get_slope_intercept(&self) -> (f64,f64){
@@ -131,16 +134,43 @@ impl LinearRegression {
     pub(crate) fn r_squared(&self) -> f64 {
         self.goodness_of_fit.expect("Not Calculated")
     }
-    pub(crate) fn calc_residuals(&mut self)  {
+    pub(crate) fn calc_residuals(&mut self) {
         let mut residuals = Vec::new();
 
-        for point in self.data.iter(){
+        for point in self.data.iter() {
             let y_pred = self.coefficient.expect("not calculated") * point.clone().x + self.intercept.expect("not calculated");
             let y_actual = point.clone().y;
 
             residuals.push(y_actual - y_pred);
             self.residuals = Some(residuals.clone());
         }
+    }
+    pub(crate) fn p_values_and_significance(&mut self) {
+        let n = self.data.len() as f64;
+        let k = 2.0; // Number of coefficients (including intercept and slope)
+        let variance = self.residuals.clone().unwrap().iter().map(|res| res.powi(2)).sum::<f64>() / (n - k);
+        let se_slope = (variance / (n * self.x_variance())).sqrt();
+        let se_intercept = (variance * (1.0 / n + (self.x_mean().powi(2) / (n * self.x_variance())))).sqrt();
+
+        // Two-tailed t-distribution test with alpha = 0.05 (95% confidence level)
+        let t_critical = 2.0; // t-distribution critical value for alpha = 0.05 and two-tailed test
+        let t_stat_slope = self.coefficient.expect("not calculated") / se_slope;
+        let t_stat_intercept = self.intercept .expect("not calculated")/ se_intercept;
+
+        // Calculate p-values using statrs crate
+        let t_dist = StudentsT::new(0.0,1.0,n - k).unwrap();
+        let p_value_slope = 2.0 * (1.0 - t_dist.cdf(t_stat_slope.abs()));
+        let p_value_intercept = 2.0 * (1.0 - t_dist.cdf(t_stat_intercept.abs()));
+        self.p_value_slope=Some(p_value_slope);
+        self.p_value_intercept=Some(p_value_intercept);
+    }
+    fn x_variance(&self) -> f64 {
+        let x_mean = self.x_mean();
+        self.data.iter().map(|p| (p.clone().x - x_mean).powi(2)).sum::<f64>() / (self.data.len() as f64 - 1.0)
+    }
+
+    fn x_mean(&self) -> f64 {
+        self.data.iter().map(|p| p.clone().x).sum::<f64>() / self.data.len() as f64
     }
 }
 
