@@ -16,7 +16,7 @@ pub(crate) struct LinearRegression{
     coefficient: Option<f64>,
     intercept: Option<f64>,
     goodness_of_fit:Option<f64>,
-    residuals:Option<f64>,
+    residuals:Option<Vec<f64>>,
     p_values_and_significance:Option<f64>,
     confidence_intervals:Option<f64>,
     predictions:Option<f64>,
@@ -44,6 +44,7 @@ impl LinearRegression {
     pub(crate) fn calculate(&mut self){
         self.calc_slope_intercept().unwrap();
         self.calc_goodness_of_fit();
+        self.calc_residuals();
 
     }
     pub(crate) fn get_slope_intercept(&self) -> (f64,f64){
@@ -74,7 +75,8 @@ impl LinearRegression {
     ) -> Result<(), Box<dyn Error>> {
         // Create a plotter area
         let output_file = &format!("./images/plots/{}", output_file);
-        let root = BitMapBackend::new(output_file, (1600, 1200)).into_drawing_area();
+        let root = BitMapBackend::new(output_file,
+                                      (1600, 1200)).into_drawing_area();
         root.fill(&WHITE)?;
 
         // Define the plot area
@@ -97,7 +99,9 @@ impl LinearRegression {
 
         // Draw the linear regression line
         chart.draw_series(LineSeries::new(
-            vec![(0.0, self.intercept.expect("Not Calculated")), (5.0, self.coefficient.expect("Not Calculated") * 5.0 + self.intercept.expect("Not Calculated"))],
+            vec![(0.0, self.intercept.expect("Not Calculated")),
+                 (5.0, self.coefficient.expect("Not Calculated") * 5.0 + self.intercept
+                     .expect("Not Calculated"))],
             &RED,
         ))?;
 
@@ -105,12 +109,15 @@ impl LinearRegression {
     }
     // Function to calculate the goodness of fit (R-squared)
     fn calc_goodness_of_fit(&mut self) {
-        let y_mean: f64 = self.data.iter().map(|p| p.clone().y).sum::<f64>() / self.data.len() as f64;
+        let y_mean: f64 = self.data.iter().map(|p| p.clone().y)
+            .sum::<f64>() / self.data.len() as f64;
         let mut ss_res = 0.0;
         let mut ss_tot = 0.0;
 
         for point in self.data.iter() {
-            let y_pred = self.coefficient.expect("Not Calculated") * point.clone().x + self.intercept.expect("Not Calculated");
+            let y_pred = self.coefficient
+                .expect("Not Calculated") * point.clone().x
+                + self.intercept.expect("Not Calculated");
             let y_actual = point.clone().y;
 
             ss_res += (y_actual - y_pred).powi(2);
@@ -123,6 +130,17 @@ impl LinearRegression {
     // Function to get the R-squared value
     pub(crate) fn r_squared(&self) -> f64 {
         self.goodness_of_fit.expect("Not Calculated")
+    }
+    pub(crate) fn calc_residuals(&mut self)  {
+        let mut residuals = Vec::new();
+
+        for point in self.data.iter(){
+            let y_pred = self.coefficient.expect("not calculated") * point.clone().x + self.intercept.expect("not calculated");
+            let y_actual = point.clone().y;
+
+            residuals.push(y_actual - y_pred);
+            self.residuals = Some(residuals.clone());
+        }
     }
 }
 
