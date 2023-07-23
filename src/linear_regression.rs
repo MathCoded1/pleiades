@@ -19,7 +19,8 @@ pub(crate) struct LinearRegression {
     residuals: Option<Vec<f64>>,
     p_value_slope: Option<f64>,
     p_value_intercept: Option<f64>,
-    confidence_intervals: Option<f64>,
+    confidence_level: Option<f64>,
+    confidence_intervals: Option<(f64, f64)>,
     predictions: Option<f64>,
     multicollinearity: Option<f64>,
     outliers: Option<f64>,
@@ -36,6 +37,7 @@ impl LinearRegression {
             residuals: None,
             p_value_slope: None,
             p_value_intercept: None,
+            confidence_level: None,
             confidence_intervals: None,
             predictions: None,
             multicollinearity: None,
@@ -49,6 +51,7 @@ impl LinearRegression {
         self.calc_goodness_of_fit();
         self.calc_residuals();
         self.p_values_and_significance();
+        self.calc_confidence_level_and_intervals();
 
         Ok(())
     }
@@ -166,15 +169,16 @@ impl LinearRegression {
         // Two-tailed t-distribution test with alpha = 0.05 (95% confidence level)
         let t_critical = 2.0; // t-distribution critical value for alpha = 0.05 and two-tailed test
         let t_stat_slope = self.coefficient.expect("not calculated") / se_slope;
-        let t_stat_intercept = self.intercept .expect("not calculated")/ se_intercept;
+        let t_stat_intercept = self.intercept.expect("not calculated") / se_intercept;
 
         // Calculate p-values using statrs crate
-        let t_dist = StudentsT::new(0.0,1.0,n - k).unwrap();
+        let t_dist = StudentsT::new(0.0, 1.0, n - k).unwrap();
         let p_value_slope = 2.0 * (1.0 - t_dist.cdf(t_stat_slope.abs()));
         let p_value_intercept = 2.0 * (1.0 - t_dist.cdf(t_stat_intercept.abs()));
-        self.p_value_slope=Some(p_value_slope);
-        self.p_value_intercept=Some(p_value_intercept);
+        self.p_value_slope = Some(p_value_slope);
+        self.p_value_intercept = Some(p_value_intercept);
     }
+
     fn x_variance(&self) -> f64 {
         let x_mean = self.x_mean();
         self.data.iter().map(|p| (p.clone().x - x_mean).powi(2)).sum::<f64>() / (self.data.len() as f64 - 1.0)
@@ -183,6 +187,44 @@ impl LinearRegression {
     fn x_mean(&self) -> f64 {
         self.data.iter().map(|p| p.clone().x).sum::<f64>() / self.data.len() as f64
     }
+    pub(crate) fn calc_confidence_level_and_intervals(&mut self) {
+
+        if let (Some(coefficient), Some(residuals)) = (
+            self.coefficient,
+            &self.residuals
+        ) {
+            let n = self.data.len() as f64;
+            let k = 2.0; // Number of coefficients (including intercept and slope)
+
+            // Get the standard error for slope
+            let variance = residuals.iter().map(|res| res.powi(2)).sum::<f64>() / (n - k);
+            let se_slope = (variance / (n * self.x_variance())).sqrt();
+            let t_stat = coefficient / se_slope;
+            // Calculate t-distribution critical value
+            let t_dist = StudentsT::new(0.0, 1.0, n - k).unwrap();
+            self.confidence_level = Some(1.0 - (t_dist.cdf(t_stat.abs()) - t_dist.cdf(-t_stat.abs())));
+            let t_critical = t_dist.inverse_cdf(1.0 - (1.0 - self.confidence_level.unwrap()) / 2.0);
+
+            // Calculate confidence intervals
+            let slope_lower = coefficient - t_critical * se_slope;
+            let slope_upper = coefficient + t_critical * se_slope;
+
+            self.confidence_intervals = Some((slope_lower, slope_upper));
+
+            // Calculate confidence level based on t-statistic
+            let t_stat = coefficient / se_slope;
+
+            // Print intermediate values for debugging
+            println!("t_critical: {}", t_critical);
+            println!("t_stat: {}", t_stat);
+
+            // The confidence level should be calculated as the area under the t-distribution
+            // curve outside the interval defined by the t-statistic (two-tailed test)
+                   } else {
+            self.confidence_level = None;
+            self.confidence_intervals = None;
+        }
+    }
+
+
 }
-
-
