@@ -21,3 +21,4 @@ fn calc_variance(values: &[f64], mean: f64) -> f64 {
     }
     variance / (values.len() as f64 - 1.0)
 }
+

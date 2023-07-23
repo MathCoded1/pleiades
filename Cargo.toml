@@ -10,4 +10,5 @@ readme = "README.md"
 
 [dependencies]
 statrs = "0.16.0"
+nalgebra = "0.32.3"
 plotters = "0.3.5"
