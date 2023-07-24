@@ -400,6 +400,8 @@ impl LinearRegression {
             vec![]
         }
     }
-     ad
+
+    // ... (other existing functions remain unchanged) ...
+
 }
 
