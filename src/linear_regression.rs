@@ -66,47 +66,46 @@ impl LinearRegression {
         self.durbin_watson_statistic.expect("Not Calculated")
     }
 
-    pub(crate) fn get_coefficients(&self) -> Option<&DVector<f64>> {
-        self.coefficients.as_ref()
+    pub(crate) fn get_coefficients(&self) -> &DVector<f64> {
+        self.coefficients.as_ref().expect("Not Calculated")
+    }
+    pub(crate) fn get_intercept(&self) -> f64 {
+        self.intercept.expect("Not Calculated")
+    }
+    pub(crate) fn get_goodness_of_fit(&self) -> f64 {
+        self.goodness_of_fit.expect("Not Calculated")
     }
 
-    pub(crate) fn get_intercept(&self) -> Option<f64> {
-        self.intercept
-    }
-    pub(crate) fn get_goodness_of_fit(&self) -> Option<f64> {
-        self.goodness_of_fit
+    pub(crate) fn get_residuals(&self) -> &DVector<f64> {
+        self.residuals.as_ref().expect("Not Calculated")
     }
 
-    pub(crate) fn get_residuals(&self) -> Option<&DVector<f64>> {
-        self.residuals.as_ref()
+    pub(crate) fn get_p_values(&self) -> &DVector<f64>{
+        self.p_values.as_ref().expect("Not Calculated")
     }
 
-    pub(crate) fn get_p_values(&self) -> Option<&DVector<f64>> {
-        self.p_values.as_ref()
+    pub(crate) fn get_t_critical(&self) -> f64 {
+        self.t_critical.expect("Not Calculated")
     }
 
-    pub(crate) fn get_t_critical(&self) -> Option<f64> {
-        self.t_critical
+    pub(crate) fn get_confidence_level(&self) -> f64 {
+        self.confidence_level.expect("Not Calculated")
     }
 
-    pub(crate) fn get_confidence_level(&self) -> Option<f64> {
-        self.confidence_level
+    pub(crate) fn get_confidence_intervals(&self) -> &DMatrix<f64> {
+        self.confidence_intervals.as_ref().expect("Not Calculated")
     }
 
-    pub(crate) fn get_confidence_intervals(&self) -> Option<&DMatrix<f64>> {
-        self.confidence_intervals.as_ref()
+    pub(crate) fn get_predictions(&self) -> &DVector<f64> {
+        self.predictions.as_ref().expect("Not Calculated")
     }
 
-    pub(crate) fn get_predictions(&self) -> Option<&DVector<f64>> {
-        self.predictions.as_ref()
+    pub(crate) fn get_vif_values(&self) -> &DVector<f64> {
+        self.vif_values.as_ref().expect("Not Calculated")
     }
 
-    pub(crate) fn get_vif_values(&self) -> Option<&DVector<f64>> {
-        self.vif_values.as_ref()
-    }
-
-    pub(crate) fn get_outliers(&self) -> Option<f64> {
-        self.outliers
+    pub(crate) fn get_outliers(&self) -> f64 {
+        self.outliers.expect("Not Calculated")
     }
 
     // Function to plot the data and the linear regression line

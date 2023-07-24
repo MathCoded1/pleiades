@@ -24,7 +24,6 @@ fn main() {
     println!("Durbin-Watson Statistic: {:?}", regression.get_durbin_watson_statistic());
     println!("Outliers: {:?}", regression.get_outliers());
     println!("Homoscedasticity: {:?}", regression.get_homoscedasticity());
-    println!("Predictions: {:?}", regression.predict(&vec![6.0, 7.0, 8.0]));
     regression.plot("Scatter Plot with Linear Regression", "X-axis", "Y-axis", "scatter_plot.png").unwrap();
 
     let x_values: Vec<f64> = (0..=10).map(|i| (2.0 * i as f64 / 3.0) + 1.0).collect();
